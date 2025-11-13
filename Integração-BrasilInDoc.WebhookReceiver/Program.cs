@@ -1,9 +1,6 @@
-  
+
 using Integração_BrasilInDoc.BrasilInDoc.Infrastructure.DependencyInjection;
 using Integração_BrasilInDoc.BrasilInDoc.Infrastructure.Services;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Text;
-using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
