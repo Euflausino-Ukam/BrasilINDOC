@@ -1,28 +1,50 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: .NET Tests (with TRX artifacts)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Show dotnet info
+        run: |
+          dotnet --info
+          dotnet --list-sdks
+
+      - name: Find test projects
+        id: find_tests
+        run: |
+          echo "::set-output name=projects::$(find . -type f -name "*Test*.csproj" -o -name "*.Tests.csproj" -o -name "*Tests*.csproj" -print | tr '\n' ' ')"
+
+      - name: Run tests and produce TRX files
+        run: |
+          mkdir -p test-results
+          if [ -z "${{ steps.find_tests.outputs.projects }}" ]; then
+            echo "No test project pattern found — running dotnet test at solution level"
+            dotnet test --logger "trx;LogFileName=test-results/results.trx" --verbosity normal
+          else
+            for proj in ${{ steps.find_tests.outputs.projects }}; do
+              echo "Running tests for: $proj"
+              # normaliza nome do arquivo de saída
+              outfile="test-results/$(basename ${proj%.*}).trx"
+              dotnet test "$proj" --logger "trx;LogFileName=$outfile" --verbosity normal
+            done
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/*.trx
