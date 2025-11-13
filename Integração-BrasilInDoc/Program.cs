@@ -37,6 +37,13 @@ internal class Program
 
         try
         {
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+            Guid id = Guid.NewGuid();
+>>>>>>> bb1170ac41330a9435bc733df7ba76647fdfb690
+=======
+>>>>>>> 15f6e20a07af79c654ea32e63d3246e331ad4fb9
             await analysisService.UpdateClientStatusAsync();
             //await analysisService.CreateClientAnalysisAsync(apiKey, client, files);
         }
