@@ -1,0 +1,30 @@
+﻿<Project Sdk="MSTest.Sdk/4.0.0-preview.25465.3">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>Integration_BrasilInDoc.Integration</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseVSTest>true</UseVSTest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Docker\**" />
+    <EmbeddedResource Remove="Docker\**" />
+    <None Remove="Docker\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bogus" Version="35.6.5" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Shouldly" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Integração-BrasilInDoc\Integração-BrasilInDoc.csproj" />
+    <ProjectReference Include="..\Integração-BrasilInDoc_Errors\Errors.csproj" />
+    <ProjectReference Include="..\Integração-BrasilInDoc_Tools\Tools.csproj" />
+  </ItemGroup>
+
+</Project>

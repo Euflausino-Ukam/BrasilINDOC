@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/001 - Api/">
+    <Project Path="Integração-BrasilInDoc.WebhookReceiver/Integração-BrasilInDoc.WebhookReceiver.csproj">
+      <BuildDependency Project="Integração-BrasilInDoc_Errors/Errors.csproj" />
+      <BuildDependency Project="Integração-BrasilInDoc_Tools/Tools.csproj" />
+    </Project>
+  </Folder>
+  <Folder Name="/002 - BrasilInDoc/">
+    <Project Path="Integração-BrasilInDoc/Integração-BrasilInDoc.csproj" />
+  </Folder>
+  <Folder Name="/003 - Tools/">
+    <Project Path="Integração-BrasilInDoc_Errors/Errors.csproj" />
+    <Project Path="Integração-BrasilInDoc_Tools/Tools.csproj" />
+  </Folder>
+  <Folder Name="/004 - Tests/">
+    <Project Path="Integração-BrasilInDoc.Test/Integração-BrasilInDoc.Test.csproj" Id="1b624766-c3bc-4186-8bda-6404023faf24" />
+  </Folder>
+</Solution>
