@@ -37,7 +37,6 @@ internal class Program
 
         try
         {
-            //Guid id = Guid.NewGuid();
             await analysisService.UpdateClientStatusAsync();
             //await analysisService.CreateClientAnalysisAsync(apiKey, client, files);
         }
