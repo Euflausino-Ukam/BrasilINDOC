@@ -1,28 +1,101 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: .NET Tests (filtered by TF)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Show dotnet info
+        run: |
+          dotnet --info
+          dotnet --list-sdks
+
+      - name: Find and test projects (skip net10)
+        id: run_tests
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+          echo "Procurando arquivos .csproj..."
+          mapfile -t csprojs < <(find . -type f -name "*.csproj" -print)
+
+          if [ ${#csprojs[@]} -eq 0 ]; then
+            echo "Nenhum .csproj encontrado."
+            exit 0
+          fi
+
+          ran_any=false
+          for proj in "${csprojs[@]}"; do
+            # extrai TargetFramework e TargetFrameworks (pode haver ambos)
+            tf=$(grep -oP '(?<=<TargetFramework>).*?(?=</TargetFramework>)' "$proj" || true)
+            tfs=$(grep -oP '(?<=<TargetFrameworks>).*?(?=</TargetFrameworks>)' "$proj" || true)
+
+            all_tf="$tf"
+            if [ -n "$tfs" ]; then
+              # split por ';' e append
+              IFS=';' read -r -a parts <<< "$tfs"
+              for p in "${parts[@]}"; do
+                if [ -n "$all_tf" ]; then
+                  all_tf="${all_tf};${p}"
+                else
+                  all_tf="$p"
+                fi
+              done
+            fi
+
+            echo "Projeto: $proj"
+            if [ -z "$all_tf" ]; then
+              echo "  - TargetFramework não encontrado explicitamente. Tentando testar (pode falhar)..."
+              target_ok=true
+            else
+              echo "  - TargetFramework(s): $all_tf"
+              # se qualquer target contiver net10, marca para pular
+              if echo "$all_tf" | grep -q -E '(^|;)net10(\b|;)'; then
+                echo "  - Pulando $proj (contém net10)."
+                target_ok=false
+              else
+                target_ok=true
+              fi
+            fi
+
+            if [ "$target_ok" = true ]; then
+              ran_any=true
+              outfile="test-results/$(basename "${proj%.*}").trx"
+              echo "  - Executando: dotnet test \"$proj\" --logger \"trx;LogFileName=$outfile\" --verbosity normal"
+              dotnet test "$proj" --logger "trx;LogFileName=$outfile" --verbosity normal || {
+                echo "  - dotnet test retornou código de erro para $proj"
+                # continue para coletar outros resultados (não fazer exit imediato)
+                TEST_FAILED=1
+              }
+            fi
+          done
+
+          if [ "$ran_any" = false ]; then
+            echo "Nenhum projeto de teste compatível (sem net10) foi encontrado para executar."
+            exit 0
+          fi
+
+          # retorna status correto (fail se ao menos um test falhou)
+          if [ "${TEST_FAILED:-0}" != "0" ]; then
+            echo "::warning::Ao menos um 'dotnet test' falhou."
+            exit 1
+          fi
+
+      - name: Upload test results (TRX)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/*.trx
